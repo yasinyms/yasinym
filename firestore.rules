@@ -1,0 +1,129 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitive helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Validation helper for UserRegistration (/users/{userId})
+    function isValidUserRegistration(data) {
+      return data.userId == request.auth.uid &&
+             data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 100 &&
+             data.phoneNumber is string && data.phoneNumber.size() >= 8 && data.phoneNumber.size() <= 20 &&
+             data.city is string && data.city.size() >= 2 && data.city.size() <= 60 &&
+             data.accountType is string && (data.accountType == 'customer' || data.accountType == 'provider') &&
+             data.guildCategory is string && data.guildCategory.size() <= 80 &&
+             data.businessTitle is string && data.businessTitle.size() <= 120 &&
+             data.nationalCode is string && data.nationalCode.size() <= 20 &&
+             data.bio is string && data.bio.size() <= 500 &&
+             data.registrationStep is int && data.registrationStep >= 1 && data.registrationStep <= 3 &&
+             data.isRegistrationComplete is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // Validation helper for UserListing (/users/{userId}/listings/{listingId})
+    function isValidUserListing(data) {
+      return data.userId == request.auth.uid &&
+             data.categoryId is string && data.categoryId.size() >= 2 && data.categoryId.size() <= 50 &&
+             data.categoryTitle is string && data.categoryTitle.size() >= 2 && data.categoryTitle.size() <= 80 &&
+             data.title is string && data.title.size() >= 2 && data.title.size() <= 150 &&
+             data.price is string && data.price.size() >= 1 && data.price.size() <= 80 &&
+             data.location is string && data.location.size() >= 2 && data.location.size() <= 100 &&
+             data.description is string && data.description.size() >= 2 && data.description.size() <= 1000 &&
+             data.sellerName is string && data.sellerName.size() >= 2 && data.sellerName.size() <= 100 &&
+             data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 25 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // UserRegistration collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().keys().hasAll([
+                         'userId', 'fullName', 'phoneNumber', 'city', 'accountType',
+                         'guildCategory', 'businessTitle', 'nationalCode', 'bio',
+                         'registrationStep', 'isRegistrationComplete', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'fullName', 'phoneNumber', 'city', 'accountType',
+                         'guildCategory', 'businessTitle', 'nationalCode', 'bio',
+                         'registrationStep', 'isRegistrationComplete', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserRegistration(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       isValidUserRegistration(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'fullName', 'phoneNumber', 'city', 'accountType',
+                         'guildCategory', 'businessTitle', 'nationalCode', 'bio',
+                         'registrationStep', 'isRegistrationComplete', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+
+      // UserListing subcollection
+      match /listings/{listingId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(listingId) && request.auth.uid == userId;
+        allow list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(listingId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll([
+                           'userId', 'categoryId', 'categoryTitle', 'title', 'price',
+                           'location', 'description', 'sellerName', 'phone',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'categoryId', 'categoryTitle', 'title', 'price',
+                           'location', 'description', 'sellerName', 'phone',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidUserListing(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(listingId) &&
+                         request.auth.uid == userId &&
+                         isValidUserListing(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'categoryId', 'categoryTitle', 'title', 'price',
+                           'location', 'description', 'sellerName', 'phone', 'updatedAt'
+                         ]);
+
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(listingId) && request.auth.uid == userId;
+      }
+    }
+  }
+}

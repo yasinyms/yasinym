@@ -1,0 +1,161 @@
+{
+  "entities": {
+    "UserRegistration": {
+      "title": "UserRegistration",
+      "description": "Represents a registered Tandis customer or specialist/guild provider profile stored on the cloud server.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The Firebase Auth UID of the registered user."
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Full name of the registered user or specialist."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Contact phone number entered during registration."
+        },
+        "city": {
+          "type": "string",
+          "description": "City / province selected during registration."
+        },
+        "accountType": {
+          "type": "string",
+          "enum": ["customer", "provider"],
+          "description": "Role selected in registration step 1: customer or specialist/guild provider."
+        },
+        "guildCategory": {
+          "type": "string",
+          "description": "Primary service/guild category for specialists or empty string for regular customers."
+        },
+        "businessTitle": {
+          "type": "string",
+          "description": "Business name or specialist title."
+        },
+        "nationalCode": {
+          "type": "string",
+          "description": "10-digit national ID or guild license code for verification."
+        },
+        "bio": {
+          "type": "string",
+          "description": "Short description of services or customer notes."
+        },
+        "registrationStep": {
+          "type": "integer",
+          "description": "Completed registration step (1 to 3)."
+        },
+        "isRegistrationComplete": {
+          "type": "boolean",
+          "description": "Whether all registration steps have been completed."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when registration was created (clients submit FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when registration was last updated (clients submit FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "fullName",
+        "phoneNumber",
+        "city",
+        "accountType",
+        "guildCategory",
+        "businessTitle",
+        "nationalCode",
+        "bio",
+        "registrationStep",
+        "isRegistrationComplete",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserListing": {
+      "title": "UserListing",
+      "description": "A classified ad or service listing created by an authenticated Tandis user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The Firebase Auth UID of the listing owner."
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Category identifier (real_estate, vehicles, market, legal, etc.)."
+        },
+        "categoryTitle": {
+          "type": "string",
+          "description": "Display title of the category in Persian."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the listing."
+        },
+        "price": {
+          "type": "string",
+          "description": "Formatted price or fee description."
+        },
+        "location": {
+          "type": "string",
+          "description": "City and neighborhood location."
+        },
+        "description": {
+          "type": "string",
+          "description": "Full details of the listing."
+        },
+        "sellerName": {
+          "type": "string",
+          "description": "Name of the advertiser."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone number for the listing."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the listing was created (clients submit FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the listing was updated (clients submit FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "categoryId",
+        "categoryTitle",
+        "title",
+        "price",
+        "location",
+        "description",
+        "sellerName",
+        "phone",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserRegistration"
+      },
+      "description": "Stores the multi-step registration record and profile for each authenticated Tandis user."
+    },
+    "/users/{userId}/listings/{listingId}": {
+      "schema": {
+        "$ref": "#/entities/UserListing"
+      },
+      "description": "Stores classified listings created by the authenticated user."
+    }
+  }
+}

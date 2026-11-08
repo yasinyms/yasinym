@@ -1,0 +1,6 @@
+{
+  "name": "تندیس",
+  "description": "سامانه یکپارچه خدمات، نیازمندی‌ها و بازارگاه آنلاین تندیس",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
